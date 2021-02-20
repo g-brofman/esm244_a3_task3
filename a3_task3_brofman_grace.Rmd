@@ -1,15 +1,17 @@
 ---
-title: "Assignment 3 Task 3"
+title: "Task 3: Text wrangling and analysis"
 author: "Grace Brofman"
-date: "2/16/2021"
-output: html_document
+date: "2/18/2021"
+output: 
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-```{r}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 library(tidyverse)
 library(tidytext)
 library(textdata)
@@ -17,11 +19,10 @@ library(pdftools)
 library(ggwordcloud)
 library(patchwork)
 ```
-I used a magazine I found in the online text archive:https://archive.org/details/texts
-specific text: https://archive.org/details/j4g09/page/n15/mode/2up
-I found this magazine silly and sexist. The first half is "just for girls", while the second half is "just for boys". The two sides are meant to give each side insight into the other gender. I wanted to see how the sentiments changed (if at all) between the "girls'" side and the "boys'" side.
-```{r}
-# upload text
+### **Introduction:**
+For this task I used an unsavory and perhaps sexist magazine I found on the [(Internet Archive)](https://archive.org/details/texts). I chose to perform a sentiment analysis on the 2009 edition of **[(Just for Girls and Guys Youth Magazine)](https://archive.org/details/j4g09/page/n15/mode/2up)** by the Human Life Alliance. The first half (pages 1-8) is "just for girls", while the second half (pages 9-16) is "just for boys". The two halves are meant to give each side insight into the other gender. I wanted to see how the sentiments differed (if at all) between the "girls'" side and the "boys'" side.
+```{r, include = FALSE, warning = FALSE, message = FALSE}
+# upload text 
 mag_text <- pdf_text("Just for Girls and Guys.pdf")
 
 # tidy text
@@ -41,7 +42,7 @@ mag_df <- mag_tidy %>%
 
 ```
 
-```{r}
+```{r, include = FALSE, warning = FALSE, message = FALSE}
 # convert to tokens using unnest_tokens()
 
 mag_tokens <- mag_df %>% 
@@ -91,8 +92,10 @@ ggplot(data = top_5_words,
 
 
 ```
-word clouds:
-```{r}
+
+### **Part 1:** Word count visualization
+
+```{r, warning = FALSE, message = FALSE}
 # girl-focused pages are 1-8. boy-focused pages are 9-16.
 girl_top_50 <- nonstop_counts %>% 
   filter(page == c(1:8)) %>% 
@@ -108,22 +111,35 @@ girl_cloud <- ggplot(data = girl_top_50,
                      aes(label = word)) +
   geom_text_wordcloud(aes(color = n, size = n)) +
   scale_size_area(max_size = 8) +
-  labs(title = "50 most common words in girl-focused pages")
+  labs(title = "50 most common words in Just for Girls") 
+
 
 boy_cloud <- ggplot(data = boy_top_50,
                      aes(label = word)) +
   geom_text_wordcloud(aes(color = n, size = n)) +
   scale_size_area(max_size = 8) +
-  labs(title = "50 most common words in boy-focused pages")
+  labs(title = "50 most common words in Just for Boys") 
 
-# put both graphs in one?
 
-girl_cloud
-boy_cloud
+
 
 ```
 
 ```{r}
+girl_cloud
+
+```
+
+**Figure 1:** Word cloud for the 50 most common words in "Just for Girls", pages 1-8. Word size is representative of frequency.
+
+```{r}
+boy_cloud
+```
+
+**Figure 2:** Word cloud for the 50 most common words in "Just for Boys", pages 9-16. Word size is representative of frequency.
+
+### **Part 2:** Sentiment analysis
+```{r, warning = FALSE, message = FALSE}
 # sentiment analysis using AFINN lexicon 
 mag_afinn <- mag_nonstop_words %>%  # finding common words beteen mag_nonstop_words and afinn lexicon
   inner_join(get_sentiments("afinn"))
@@ -136,13 +152,24 @@ afinn_means <- mag_afinn %>%
   group_by(page) %>% 
   summarize(mean_afinn = mean(value))
 
-ggplot(data = afinn_means,
+plot_2 <- ggplot(data = afinn_means,
        aes(x = page,
            y = mean_afinn)) +
   geom_col(aes(fill = mean_afinn)) +
-  coord_flip()
+  scale_fill_gradient(low = "deeppink",
+  high = "dodgerblue2") +
+  geom_vline(xintercept = 8, linetype = "dashed", color = "darkgray") +
+  labs(x = "Page number", y = "Score", title = "Mean AFINN score per page", fill = "Score range") +
+  coord_flip() +
+  theme_minimal()
 
+plot_2
 
 # girl-targeted pages are 1-8, boy-targeted pages are 9-16. it seems that in general, the boy-targeted pages are associated with a higher positivity than the girl-targeted pages
 ```
 
+**Figure 3:** Sentiment analysis of Just for Girls and Boys Youth Magazine using the AFINN lexicon. Pages 1-8 are "Just for Girls" while pages 9-16 are "Just for Boys". 
+
+
+### **References**
+**Human Life Alliance**. "Just for Girl and Guys Youth Magazine." 2009: https://archive.org/details/j4g09/mode/2up
